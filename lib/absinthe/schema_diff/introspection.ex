@@ -25,13 +25,13 @@ defmodule Absinthe.SchemaDiff.Introspection do
 
   typedstruct module: Field, enforce: true do
     field :name, String.t()
-    field :deprecated, :boolean
-    field :deprecation_reason, String.t()
+    field :deprecated, :boolean, default: false
+    field :deprecation_reason, String.t(), default: nil
     field :type, Type.t()
   end
 
-  typedstruct module: Type, enforce: true do
-    field :kind, String.t()
+  typedstruct module: Type do
+    field :kind, String.t(), enforce: true
     field :name, String.t()
     field :of_type, Type.t()
   end
@@ -50,9 +50,6 @@ defmodule Absinthe.SchemaDiff.Introspection do
     field :name, String.t()
     field :possible_types, list(Type.t())
   end
-
-  # TODO: Diff structure
-  # additions, removals, changes (recursive?)
 
   def generate(schema_module) when is_atom(schema_module) do
     {:ok, %{data: %{"__schema" => raw_schema}}} = Absinthe.run(@query, schema_module)
