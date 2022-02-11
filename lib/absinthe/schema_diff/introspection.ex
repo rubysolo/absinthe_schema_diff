@@ -48,7 +48,7 @@ defmodule Absinthe.SchemaDiff.Introspection do
 
   typedstruct module: Union, enforce: true do
     field :name, String.t()
-    field :possible_types, list(Type.t)
+    field :possible_types, list(Type.t())
   end
 
   # TODO: Diff structure
@@ -60,7 +60,14 @@ defmodule Absinthe.SchemaDiff.Introspection do
   end
 
   def generate(url) when is_binary(url) do
-    {:ok, {_http, _headers, body}} = :httpc.request(:post, {String.to_charlist(url), [{'Content-type', 'application/json'}], '', String.to_charlist(@query)}, [], [])
+    {:ok, {_http, _headers, body}} =
+      :httpc.request(
+        :post,
+        {String.to_charlist(url), [{'Content-type', 'application/json'}], '',
+         String.to_charlist(@query)},
+        [],
+        []
+      )
 
     body
     |> to_string()
@@ -116,11 +123,12 @@ defmodule Absinthe.SchemaDiff.Introspection do
       deprecated: Map.get(input, "isDeprecated"),
       deprecation_reason: Map.get(input, "deprecationReason"),
       name: name,
-      type: to_type(Map.get(input, "type")),
+      type: to_type(Map.get(input, "type"))
     }
   end
 
   defp to_type(nil), do: nil
+
   defp to_type(%{"kind" => kind, "name" => name, "ofType" => of_type}) do
     %Type{
       kind: kind,
@@ -129,9 +137,18 @@ defmodule Absinthe.SchemaDiff.Introspection do
     }
   end
 
-  defp insert(%Scalar{} = new, %Schema{scalars: existing} = schema), do: %{schema | scalars: [new | existing]}
-  defp insert(%Object{} = new, %Schema{objects: existing} = schema), do: %{schema | objects: [new | existing]}
-  defp insert(%InputObject{} = new, %Schema{input_objects: existing} = schema), do: %{schema | input_objects: [new | existing]}
-  defp insert(%Enumeration{} = new, %Schema{enums: existing} = schema), do: %{schema | enums: [new | existing]}
-  defp insert(%Union{} = new, %Schema{unions: existing} = schema), do: %{schema | unions: [new | existing]}
+  defp insert(%Scalar{} = new, %Schema{scalars: existing} = schema),
+    do: %{schema | scalars: [new | existing]}
+
+  defp insert(%Object{} = new, %Schema{objects: existing} = schema),
+    do: %{schema | objects: [new | existing]}
+
+  defp insert(%InputObject{} = new, %Schema{input_objects: existing} = schema),
+    do: %{schema | input_objects: [new | existing]}
+
+  defp insert(%Enumeration{} = new, %Schema{enums: existing} = schema),
+    do: %{schema | enums: [new | existing]}
+
+  defp insert(%Union{} = new, %Schema{unions: existing} = schema),
+    do: %{schema | unions: [new | existing]}
 end
