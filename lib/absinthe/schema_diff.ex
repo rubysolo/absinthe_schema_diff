@@ -1,18 +1,15 @@
 defmodule Absinthe.SchemaDiff do
-  @moduledoc """
-  Documentation for `Absinthe.SchemaDiff`.
-  """
+  alias Absinthe.SchemaDiff.Introspection
+  alias Absinthe.SchemaDiff.Diff
 
   @doc """
-  Hello world.
-
-  ## Examples
-
-      iex> Absinthe.SchemaDiff.hello()
-      :world
-
+  compare local Absinthe schema with the GraphQL schema at the provided URL and return a DiffSet
   """
-  def hello do
-    :world
+  @spec diff(atom(), String.t()) :: Diff.DiffSet.t()
+  def diff(schema, url) do
+    local_schema = Introspection.generate(schema)
+    remote_schema = Introspection.generate(url)
+
+    Diff.diff(remote_schema, local_schema)
   end
 end

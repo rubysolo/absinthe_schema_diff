@@ -25,6 +25,7 @@ defmodule Absinthe.SchemaDiff.DiffTest do
     ]
   }
 
+  @int %Type{kind: "SCALAR", name: "Int"}
   @nullable_string %Type{kind: "SCALAR", name: "String"}
   @required_string %Type{kind: "NON_NULL", of_type: %Type{kind: "SCALAR", name: "String"}}
 
@@ -197,8 +198,74 @@ defmodule Absinthe.SchemaDiff.DiffTest do
              } == Diff.diff(@schema, new_schema)
     end
 
-    # TODO: object field type changes
-    # TODO: object field deprecation changes
+    test "changed object fields are reported" do
+      %Object{fields: [field | fields]} = existing_object = @object
+      new_field = %{field | type: @int}
+      new_object = %{existing_object | fields: [new_field | fields]}
+
+      existing_schema = @schema
+      new_schema = %{existing_schema | objects: [new_object]}
+
+      assert %DiffSet{
+               changes: [
+                 %Diff{
+                   type: Object,
+                   name: "Car",
+                   changes: %DiffSet{
+                     changes: [
+                       %Diff{
+                         type: Field,
+                         name: "Year",
+                         changes: %DiffSet{
+                           changes: [
+                             %Diff{
+                               type: Type,
+                               changes: %DiffSet{
+                                 additions: ["Int"],
+                                 removals: ["non_null(String)"]
+                               }
+                             }
+                           ]
+                         }
+                       }
+                     ]
+                   }
+                 }
+               ]
+             } == Diff.diff(@schema, new_schema)
+    end
+
+    test "changes to object field deprecations are reported" do
+      %Object{fields: [field | fields]} = existing_object = @object
+      new_field = %{field | deprecated: true, deprecation_reason: "old and busted"}
+      new_object = %{existing_object | fields: [new_field | fields]}
+
+      existing_schema = @schema
+      new_schema = %{existing_schema | objects: [new_object]}
+
+      assert %DiffSet{
+               changes: [
+                 %Diff{
+                   type: Object,
+                   name: "Car",
+                   changes: %DiffSet{
+                     changes: [
+                       %Diff{
+                         type: Field,
+                         name: "Year",
+                         changes: %DiffSet{
+                           changes: [
+                             %Diff{name: "deprecation_reason", changes: %DiffSet{additions: ["old and busted"], removals: [nil]}},
+                             %Diff{name: "deprecated", changes: %DiffSet{additions: [true], removals: [false]}},
+                           ]
+                         }
+                       }
+                     ]
+                   }
+                 }
+               ]
+             } == Diff.diff(@schema, new_schema)
+    end
 
     test "added input objects are reported" do
       new_input_object = %InputObject{
@@ -267,9 +334,6 @@ defmodule Absinthe.SchemaDiff.DiffTest do
              } == Diff.diff(@schema, new_schema)
     end
 
-    # TODO: input object field type changes
-    # TODO: input object field deprecation changes
-
     test "added unions are reported" do
       new_union = %Union{
         name: "Life",
@@ -335,18 +399,22 @@ defmodule Absinthe.SchemaDiff.DiffTest do
 
       assert %DiffSet{
                changes: [
-                 %Diff{type: Union, name: "SearchResult", changes: %DiffSet{
-                   changes: [
-                     %Diff{
-                       name: "Car",
-                       type: Type,
-                       changes: %DiffSet{
-                         additions: ["other"],
-                         removals: ["object"],
+                 %Diff{
+                   type: Union,
+                   name: "SearchResult",
+                   changes: %DiffSet{
+                     changes: [
+                       %Diff{
+                         name: "Car",
+                         type: Type,
+                         changes: %DiffSet{
+                           additions: ["other"],
+                           removals: ["object"]
+                         }
                        }
-                     }
-                   ]
-                 }}
+                     ]
+                   }
+                 }
                ]
              } == Diff.diff(@schema, new_schema)
     end

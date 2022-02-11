@@ -5,6 +5,7 @@ defmodule Absinthe.SchemaDiff.Diff do
 
   alias Absinthe.SchemaDiff.Introspection.{
     Enumeration,
+    Field,
     InputObject,
     Object,
     Schema,
@@ -28,10 +29,24 @@ defmodule Absinthe.SchemaDiff.Diff do
     []
   end
 
+  def diff({atom, existing}, {atom, new}) when is_atom(atom) do
+    %DiffSet{
+      changes: [
+        %Diff{
+          name: to_string(atom),
+          changes: %DiffSet{
+            additions: [new],
+            removals: [existing]
+          }
+        }
+      ]
+    }
+  end
+
   def diff(existing, new) when is_binary(existing) and is_binary(new) do
     %DiffSet{
       additions: [new],
-      removals: [existing],
+      removals: [existing]
     }
   end
 
@@ -39,6 +54,24 @@ defmodule Absinthe.SchemaDiff.Diff do
     %DiffSet{
       changes: [
         %Diff{type: Enumeration, name: existing.name, changes: diff(existing.values, new.values)}
+      ]
+    }
+  end
+
+  def diff(%Field{} = existing, %Field{} = new) do
+    %DiffSet{
+      changes: [
+        %Diff{
+          type: Field,
+          name: existing.name,
+          changes:
+            reduce_diffs([
+              {{:deprecated, existing.deprecated}, {:deprecated, new.deprecated}},
+              {{:deprecation_reason, existing.deprecation_reason},
+               {:deprecation_reason, new.deprecation_reason}},
+              {existing.type, new.type}
+            ])
+        }
       ]
     }
   end
@@ -96,7 +129,7 @@ defmodule Absinthe.SchemaDiff.Diff do
     |> reduce_diffs()
   end
 
-  defp reduce_diffs(diffs) do
+  defp reduce_diffs(diffs) when is_list(diffs) do
     Enum.reduce(diffs, %DiffSet{}, fn
       {nil, new_item}, %{additions: additions} = acc ->
         %{acc | additions: [new_item | additions]}
@@ -125,6 +158,7 @@ defmodule Absinthe.SchemaDiff.Diff do
 
   defp render_type(%Type{kind: "SCALAR", name: name, of_type: nil}), do: name
   defp render_type(%Type{kind: kind, of_type: nil}), do: String.downcase(kind)
+
   defp render_type(%Type{kind: kind, of_type: of_type}) do
     "#{String.downcase(kind)}(#{render_type(of_type)})"
   end
