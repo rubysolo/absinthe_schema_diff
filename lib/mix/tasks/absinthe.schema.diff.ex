@@ -3,6 +3,7 @@ defmodule Mix.Tasks.Absinthe.Schema.Diff do
 
   alias Absinthe.SchemaDiff
   alias Absinthe.SchemaDiff.Diff.DiffSet
+  alias Absinthe.SchemaDiff.Report
 
   @shortdoc "Compare a local Absinthe schema with a remote GrahpQL schema"
 
@@ -52,15 +53,9 @@ defmodule Mix.Tasks.Absinthe.Schema.Diff do
     SchemaDiff.diff(schema, url)
   end
 
-  def handle_diff(%DiffSet{} = diff_set) do
-    IO.puts("[Absinthe.SchemaDiff] schema changes detected:")
-    # TODO: console formatter
-    IO.inspect(diff_set)
-    :ok
-  end
-
-  def handle_diff([]) do
-    IO.puts("[Absinthe.SchemaDiff] no changes.")
+  def handle_diff(diff_set) do
+    Report.tag()
+    Report.report(diff_set)
     :ok
   end
 

@@ -1,6 +1,9 @@
 defmodule Absinthe.SchemaDiff.Diff do
   use TypedStruct
 
+  # TODO: enum value as: <-- changed "as"
+  # TODO: changes to mutation field args
+
   alias Absinthe.SchemaDiff.Diff
 
   alias Absinthe.SchemaDiff.Introspection.{
@@ -26,7 +29,7 @@ defmodule Absinthe.SchemaDiff.Diff do
   end
 
   def diff(match, match) do
-    []
+    %DiffSet{}
   end
 
   def diff({atom, existing}, {atom, new}) when is_atom(atom) do
@@ -156,10 +159,10 @@ defmodule Absinthe.SchemaDiff.Diff do
     Map.put(map, name, struct)
   end
 
-  defp render_type(%Type{kind: "SCALAR", name: name, of_type: nil}), do: name
-  defp render_type(%Type{kind: kind, of_type: nil}), do: String.downcase(kind)
+  def render_type(%Type{kind: "SCALAR", name: name, of_type: nil}), do: name
+  def render_type(%Type{kind: kind, of_type: nil}), do: String.downcase(kind)
 
-  defp render_type(%Type{kind: kind, of_type: of_type}) do
+  def render_type(%Type{kind: kind, of_type: of_type}) do
     "#{String.downcase(kind)}(#{render_type(of_type)})"
   end
 end

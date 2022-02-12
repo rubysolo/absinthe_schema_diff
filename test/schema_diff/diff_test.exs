@@ -63,8 +63,8 @@ defmodule Absinthe.SchemaDiff.DiffTest do
 
   describe "diff/2" do
     test "identical structures return an empty diff" do
-      assert [] == Diff.diff(@schema, @schema)
-      assert [] == Diff.diff(@enum, @enum)
+      assert %DiffSet{} == Diff.diff(@schema, @schema)
+      assert %DiffSet{} == Diff.diff(@enum, @enum)
     end
 
     test "added enums are reported" do
@@ -255,8 +255,14 @@ defmodule Absinthe.SchemaDiff.DiffTest do
                          name: "Year",
                          changes: %DiffSet{
                            changes: [
-                             %Diff{name: "deprecation_reason", changes: %DiffSet{additions: ["old and busted"], removals: [nil]}},
-                             %Diff{name: "deprecated", changes: %DiffSet{additions: [true], removals: [false]}},
+                             %Diff{
+                               name: "deprecation_reason",
+                               changes: %DiffSet{additions: ["old and busted"], removals: [nil]}
+                             },
+                             %Diff{
+                               name: "deprecated",
+                               changes: %DiffSet{additions: [true], removals: [false]}
+                             }
                            ]
                          }
                        }
