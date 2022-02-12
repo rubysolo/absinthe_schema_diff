@@ -60,9 +60,21 @@ defmodule Absinthe.SchemaDiff.Introspection do
     {:ok, {_http, _headers, body}} =
       :httpc.request(
         :post,
-        {String.to_charlist(url), [{'Content-type', 'application/json'}], '',
-         String.to_charlist(@query)},
-        [],
+        {
+          String.to_charlist(url),
+          [{'Content-type', 'application/json'}],
+          '',
+          String.to_charlist(@query)
+        },
+        [
+          ssl: [
+            verify: :verify_peer,
+            cacertfile: '/etc/ssl/cert.pem',
+            customize_hostname_check: [
+              match_fun: :public_key.pkix_verify_hostname_match_fun(:https)
+            ]
+          ]
+        ],
         []
       )
 
