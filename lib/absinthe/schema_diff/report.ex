@@ -20,6 +20,11 @@ defmodule Absinthe.SchemaDiff.Report do
   @tag "[Absinthe.SchemaDiff]\n"
   @indent "  "
 
+  def handle(diff_set) do
+    tag()
+    report(diff_set)
+  end
+
   def tag do
     IO.puts(@tag)
   end
@@ -99,13 +104,14 @@ defmodule Absinthe.SchemaDiff.Report do
           name: name,
           type: Union,
           changes: %DiffSet{
-            changes: [_|_] = changed_types
+            changes: [_ | _] = changed_types
           }
         },
         indent
       ) do
     IO.puts(indent <> "Union #{name}")
     IO.puts(indent <> @indent <> "Changes:")
+
     Enum.each(changed_types, fn diff ->
       report(diff, indent <> @indent <> @indent)
     end)

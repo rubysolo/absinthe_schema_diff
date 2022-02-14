@@ -28,6 +28,10 @@ defmodule Absinthe.SchemaDiff.Diff do
     field :changes, DiffSet.t()
   end
 
+  def empty?(%DiffSet{} = diff_set) do
+    %DiffSet{} == diff_set
+  end
+
   def diff(match, match) do
     %DiffSet{}
   end
