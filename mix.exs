@@ -20,7 +20,6 @@ defmodule AbsintheSchemaDiff.MixProject do
   defp deps do
     [
       {:absinthe, "~> 1.7.0"},
-      {:credo, "~> 1.6.3", only: [:dev, :test], runtime: false},
       {:jason, "~> 1.3.0"},
       {:typed_struct, "~> 0.2.1"}
     ]
