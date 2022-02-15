@@ -68,7 +68,7 @@ defmodule Mix.Tasks.Absinthe.Schema.Diff do
     %Options{
       handlers: find_handlers(opts),
       schema: find_schema(opts),
-      url: validate_url(args),
+      url: validate_url(args)
     }
   end
 
@@ -78,8 +78,10 @@ defmodule Mix.Tasks.Absinthe.Schema.Diff do
       case Keyword.get(acc, k) do
         nil ->
           Keyword.put(acc, k, v)
+
         existing when is_list(existing) ->
           Keyword.put(acc, k, [v | existing])
+
         existing ->
           Keyword.put(acc, k, [v, existing])
       end
@@ -114,6 +116,7 @@ defmodule Mix.Tasks.Absinthe.Schema.Diff do
   end
 
   defp validate_handler_module(module) when is_atom(module), do: module
+
   defp validate_handler_module(module_name) do
     result =
       [module_name]
@@ -123,8 +126,9 @@ defmodule Mix.Tasks.Absinthe.Schema.Diff do
     case result do
       {:module, module} ->
         module
+
       {:error, _} ->
-        Logger.warn "Could not find handler module #{module_name}"
+        Logger.warn("Could not find handler module #{module_name}")
         nil
     end
   end

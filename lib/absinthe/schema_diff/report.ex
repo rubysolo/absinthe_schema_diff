@@ -19,12 +19,73 @@ defmodule Absinthe.SchemaDiff.Report do
 
   @nl "\n"
   @tag "[Absinthe.SchemaDiff]" <> @nl
-  @indent "  "
+
+  defmodule Formatter do
+    @moduledoc false
+    use TypedStruct
+    alias __MODULE__
+
+    @indent "  "
+
+    typedstruct do
+      field :color, :boolean, default: true
+      field :indent, :string, default: ""
+    end
+
+    def add_indent(%Formatter{} = formatter, count \\ 1) do
+      additional_indent = for _ <- 1..count, do: @indent
+      %{formatter | indent: [formatter.indent, additional_indent]}
+    end
+
+    def deprecation(%Formatter{color: true}, text), do: magenta(text)
+    def deprecation(_, text), do: text
+
+    def inline_type(%Formatter{color: true}, text), do: yellow(text)
+    def inline_type(_, text), do: text
+
+    def label(%Formatter{color: true}, text), do: red(text)
+    def label(_, text), do: text
+
+    def ok(%Formatter{color: true}, text), do: green(text)
+    def ok(_, text), do: text
+
+    def schema_object(%Formatter{color: true}, text), do: cyan(text)
+    def schema_object(_, text), do: text
+
+    def type_label(%Formatter{color: true}, text), do: gray(text)
+    def type_label(_, text), do: text
+
+    defp cyan(text) do
+      IO.ANSI.cyan() <> text <> IO.ANSI.reset()
+    end
+
+    defp gray(text) do
+      IO.ANSI.light_black() <> text <> IO.ANSI.reset()
+    end
+
+    defp green(text) do
+      IO.ANSI.green() <> text <> IO.ANSI.reset()
+    end
+
+    defp magenta(text) do
+      IO.ANSI.magenta() <> text <> IO.ANSI.reset()
+    end
+
+    defp red(text) do
+      IO.ANSI.red() <> text <> IO.ANSI.reset()
+    end
+
+    defp yellow(text) do
+      IO.ANSI.yellow() <> text <> IO.ANSI.reset()
+    end
+  end
 
   def handle(diff_set, opts \\ []) do
+    formatter = %Formatter{color: Keyword.get(opts, :color, true)}
+
     result = [
       tag(),
-      report(diff_set)
+      report(diff_set, formatter)
     ]
 
     case Keyword.get(opts, :output, :stdout) do
@@ -38,14 +99,14 @@ defmodule Absinthe.SchemaDiff.Report do
     [@tag]
   end
 
-  def report(diff, indent \\ "")
+  def report(diff, formatter \\ %Formatter{})
 
-  def report(%DiffSet{additions: [], removals: [], changes: []}, _indent) do
-    [green("no changes."), @nl]
+  def report(%DiffSet{additions: [], removals: [], changes: []}, formatter) do
+    [Formatter.ok(formatter, "no changes."), @nl]
   end
 
-  def report(item, indent) when is_binary(item) do
-    [indent, item, @nl]
+  def report(item, formatter) when is_binary(item) do
+    [formatter.indent, item, @nl]
   end
 
   def report(
@@ -54,12 +115,18 @@ defmodule Absinthe.SchemaDiff.Report do
           type: Enumeration,
           changes: %DiffSet{additions: additions, removals: removals}
         },
-        indent
+        formatter
       ) do
     [
-      [indent, gray("Enum"), " ", cyan(name), @nl],
-      report("Additions:", Enum.map(additions, & &1.name), [indent, @indent]),
-      report("Removals:", Enum.map(removals, & &1.name), [indent, @indent])
+      [
+        formatter.indent,
+        Formatter.type_label(formatter, "Enum"),
+        " ",
+        Formatter.schema_object(formatter, name),
+        @nl
+      ],
+      report("Additions:", Enum.map(additions, & &1.name), Formatter.add_indent(formatter)),
+      report("Removals:", Enum.map(removals, & &1.name), Formatter.add_indent(formatter))
     ]
   end
 
@@ -79,15 +146,15 @@ defmodule Absinthe.SchemaDiff.Report do
             ]
           }
         },
-        indent
+        formatter
       ) do
     [
-      indent,
-      cyan(name),
+      formatter.indent,
+      Formatter.schema_object(formatter, name),
       " type changed from ",
-      yellow(old_type),
+      Formatter.inline_type(formatter, old_type),
       " to ",
-      yellow(new_type),
+      Formatter.inline_type(formatter, new_type),
       @nl
     ]
   end
@@ -98,15 +165,15 @@ defmodule Absinthe.SchemaDiff.Report do
           type: _type,
           changes: %DiffSet{additions: [new_value], removals: [old_value]}
         },
-        indent
+        formatter
       ) do
     [
-      indent,
-      cyan(name),
+      formatter.indent,
+      Formatter.schema_object(formatter, name),
       " changed from ",
-      yellow(inspect(old_value)),
+      Formatter.inline_type(formatter, inspect(old_value)),
       " to ",
-      yellow(inspect(new_value)),
+      Formatter.inline_type(formatter, inspect(new_value)),
       @nl
     ]
   end
@@ -119,108 +186,150 @@ defmodule Absinthe.SchemaDiff.Report do
             changes: [_ | _] = changed_types
           }
         },
-        indent
+        formatter
       ) do
+    indent_once = Formatter.add_indent(formatter)
+    indent_twice = Formatter.add_indent(indent_once)
+
     Enum.reduce(
       changed_types,
       [
-        [indent, gray("Union"), " ", cyan(name), @nl],
-        [[indent, @indent], "Changes:", @nl],
+        [
+          formatter.indent,
+          Formatter.type_label(formatter, "Union"),
+          " ",
+          Formatter.schema_object(formatter, name),
+          @nl
+        ],
+        [indent_once.indent, "Changes:", @nl]
       ],
       fn diff, acc ->
-        [acc, report(diff, [indent, @indent, @indent])]
+        [acc, report(diff, indent_twice)]
       end
     )
   end
 
-  def report(%Diff{name: name, type: module, changes: changes}, indent) do
+  def report(%Diff{name: name, type: module, changes: changes}, formatter) do
     label = module_basename(module)
 
     [
-      [indent, gray(label), " ", cyan(name), @nl],
-      report(changes, [indent, @indent])
+      [
+        formatter.indent,
+        Formatter.type_label(formatter, label),
+        " ",
+        Formatter.schema_object(formatter, name),
+        @nl
+      ],
+      report(changes, Formatter.add_indent(formatter))
     ]
   end
 
-  def report(%DiffSet{additions: additions, removals: removals, changes: changes}, indent) do
+  def report(%DiffSet{additions: additions, removals: removals, changes: changes}, formatter) do
     [
-      report("Additions:", additions, indent),
-      report("Removals:", removals, indent),
-      report("Changes:", changes, indent)
+      report("Additions:", additions, formatter),
+      report("Removals:", removals, formatter),
+      report("Changes:", changes, formatter)
     ]
   end
 
-  def report(%Enumeration{name: name, values: values}, indent) do
+  def report(%Enumeration{name: name, values: values}, formatter) do
+    indent_once = Formatter.add_indent(formatter)
+    indent_twice = Formatter.add_indent(indent_once)
+
     Enum.reduce(
       values,
       [
-        [indent, gray("Enum"), " ", cyan(name), @nl],
-        [indent, @indent, "Values:", @nl]
+        [
+          formatter.indent,
+          Formatter.type_label(formatter, "Enum"),
+          " ",
+          Formatter.schema_object(formatter, name),
+          @nl
+        ],
+        [indent_once.indent, "Values:", @nl]
       ],
-
       fn %{name: name}, acc ->
-        [acc, indent, @indent, @indent, name, @nl]
+        [acc, indent_twice.indent, name, @nl]
       end
     )
   end
 
-  def report(%Field{} = field, indent) do
+  def report(%Field{} = field, formatter) do
     deprecation =
       if field.deprecated do
-        magenta(" DEPRECATED - #{field.deprecation_reason}")
+        Formatter.deprecation(formatter, " DEPRECATED - #{field.deprecation_reason}")
       else
         ""
       end
 
     [
-      indent,
-      cyan(field.name),
+      formatter.indent,
+      Formatter.schema_object(formatter, field.name),
       " ",
-      yellow(Diff.render_type(field.type)),
+      Formatter.inline_type(formatter, Diff.render_type(field.type)),
       deprecation,
       @nl
     ]
   end
 
-  def report(%module{name: name, fields: fields}, indent) when module in [InputObject, Object] do
+  def report(%module{name: name, fields: fields}, formatter)
+      when module in [InputObject, Object] do
     label = module_basename(module)
+    new_formatter = Formatter.add_indent(formatter)
 
     Enum.reduce(
       fields,
       [
-        [indent, gray(label), " ", cyan(name), @nl],
-        [indent, @indent, "Fields:", @nl]
+        [
+          formatter.indent,
+          Formatter.type_label(formatter, label),
+          " ",
+          Formatter.schema_object(formatter, name),
+          @nl
+        ],
+        [new_formatter.indent, "Fields:", @nl]
       ],
       fn field, acc ->
-        [acc, report(field, [indent, @indent, @indent])]
+        [acc, report(field, Formatter.add_indent(new_formatter))]
       end
     )
   end
 
-  def report(%Type{} = type, indent) do
-    [indent, cyan(type.name), " ", yellow(Diff.render_type(type)), @nl]
+  def report(%Type{} = type, formatter) do
+    [
+      formatter.indent,
+      Formatter.schema_object(formatter, type.name),
+      " ",
+      Formatter.inline_type(formatter, Diff.render_type(type)),
+      @nl
+    ]
   end
 
-  def report(%Union{name: name, possible_types: types}, indent) do
+  def report(%Union{name: name, possible_types: types}, formatter) do
+    indent_once = Formatter.add_indent(formatter)
+    indent_twice = Formatter.add_indent(indent_once)
+
     Enum.reduce(
       types,
       [
-        [indent, "Union #{name}", @nl],
-        [indent, @indent, "Possible Types:", @nl]
+        [formatter.indent, "Union #{name}", @nl],
+        [indent_once.indent, "Possible Types:", @nl]
       ],
       fn type, acc ->
-        [acc, report(type, [indent, @indent, @indent])]
+        [acc, report(type, indent_twice)]
       end
     )
   end
 
-  def report(_label, [], _indent), do: []
+  def report(_label, [], _formatter), do: []
 
-  def report(label, items, indent) when is_list(items) do
+  def report(label, items, formatter) when is_list(items) do
+    new_formatter = Formatter.add_indent(formatter)
+
     Enum.reduce(
       items,
-      [indent, red(label), @nl],
-      fn item, acc -> [acc, report(item, [indent, @indent])] end
+      [formatter.indent, Formatter.label(formatter, label), @nl],
+      fn item, acc -> [acc, report(item, new_formatter)] end
     )
   end
 
@@ -229,29 +338,5 @@ defmodule Absinthe.SchemaDiff.Report do
     |> to_string()
     |> String.split(".")
     |> List.last()
-  end
-
-  defp cyan(text) do
-    IO.ANSI.cyan() <> text <> IO.ANSI.reset()
-  end
-
-  defp gray(text) do
-    IO.ANSI.light_black() <> text <> IO.ANSI.reset()
-  end
-
-  defp green(text) do
-    IO.ANSI.green() <> text <> IO.ANSI.reset()
-  end
-
-  defp magenta(text) do
-    IO.ANSI.magenta() <> text <> IO.ANSI.reset()
-  end
-
-  defp red(text) do
-    IO.ANSI.red() <> text <> IO.ANSI.reset()
-  end
-
-  defp yellow(text) do
-    IO.ANSI.yellow() <> text <> IO.ANSI.reset()
   end
 end

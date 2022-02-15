@@ -94,8 +94,7 @@ defmodule Absinthe.SchemaDiff.Introspection do
   end
 
   def generate(json) when is_binary(json) do
-    %{"data" => %{"__schema" => raw_schema}} =
-      Jason.decode!(json)
+    %{"data" => %{"__schema" => raw_schema}} = Jason.decode!(json)
 
     build_schema(raw_schema)
   end
