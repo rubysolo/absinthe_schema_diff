@@ -6,6 +6,7 @@ defmodule Absinthe.SchemaDiff.Introspection do
          |> Path.join("introspection_query.graphql")
          |> File.read!()
 
+
   typedstruct module: Schema do
     field :scalars, list(Scalar.t()), default: []
     field :objects, list(Object.t()), default: []
@@ -73,15 +74,7 @@ defmodule Absinthe.SchemaDiff.Introspection do
           '',
           String.to_charlist(@query)
         },
-        [
-          ssl: [
-            verify: :verify_peer,
-            cacertfile: '/etc/ssl/cert.pem',
-            customize_hostname_check: [
-              match_fun: :public_key.pkix_verify_hostname_match_fun(:https)
-            ]
-          ]
-        ],
+        Application.get_all_env(:httpc) |> default_httpc_ssl_config(),
         []
       )
 
@@ -97,6 +90,22 @@ defmodule Absinthe.SchemaDiff.Introspection do
     %{"data" => %{"__schema" => raw_schema}} = Jason.decode!(json)
 
     build_schema(raw_schema)
+  end
+
+  defp default_httpc_ssl_config(config) do
+    case Keyword.get(config, :ssl) do
+      nil ->
+        Keyword.merge(config, ssl: [
+          verify: :verify_peer,
+          cacertfile: '/etc/ssl/certs/ca-certificates.crt',
+          customize_hostname_check: [
+            match_fun: :public_key.pkix_verify_hostname_match_fun(:https)
+          ]
+        ])
+
+      _ ->
+        config
+    end
   end
 
   def build_schema(%{"types" => types}) when is_list(types) do
