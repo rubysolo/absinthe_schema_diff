@@ -1,6 +1,6 @@
 defmodule Absinthe.SchemaDiff do
-  alias Absinthe.SchemaDiff.Introspection
   alias Absinthe.SchemaDiff.Diff
+  alias Absinthe.SchemaDiff.Introspection
 
   @doc """
   compare local Absinthe schema with the GraphQL schema at the provided URL and return a DiffSet

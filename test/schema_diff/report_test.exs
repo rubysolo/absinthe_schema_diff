@@ -12,12 +12,10 @@ defmodule Absinthe.SchemaDiff.ReportTest do
     Field,
     InputObject,
     Object,
-    Schema,
     Type,
     Union
   }
 
-  @int %Type{kind: "SCALAR", name: "Int"}
   @nullable_string %Type{kind: "SCALAR", name: "String"}
   @required_string %Type{kind: "NON_NULL", of_type: %Type{kind: "SCALAR", name: "String"}}
 
@@ -545,11 +543,17 @@ defmodule Absinthe.SchemaDiff.ReportTest do
   end
 
   defp assert_report_output(diff_set, expected_output) do
-    actual_output =
+    color_output =
       diff_set
       |> Report.report()
       |> Enum.join()
-      |> remove_ansi_sequences()
+
+    plain_output =
+      diff_set
+      |> Report.report(%Report.Formatter{color: false})
+      |> Enum.join()
+
+    assert remove_ansi_sequences(color_output) == plain_output
 
     regex =
       expected_output
@@ -557,7 +561,7 @@ defmodule Absinthe.SchemaDiff.ReportTest do
       |> String.replace(")", "\\)")
       |> Regex.compile!()
 
-    assert actual_output =~ regex
+    assert plain_output =~ regex
   end
 
   @ansi_regex [
@@ -569,8 +573,7 @@ defmodule Absinthe.SchemaDiff.ReportTest do
                 IO.ANSI.reset(),
                 IO.ANSI.yellow()
               ]
-              |> Enum.map(&Regex.escape/1)
-              |> Enum.join("|")
+              |> Enum.map_join("|", &Regex.escape/1)
               |> Regex.compile!()
 
   defp remove_ansi_sequences(string) do
