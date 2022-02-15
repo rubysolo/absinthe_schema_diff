@@ -10,6 +10,7 @@ defmodule Absinthe.SchemaDiff.Introspection do
     field :scalars, list(Scalar.t()), default: []
     field :objects, list(Object.t()), default: []
     field :input_objects, list(InputObject.t()), default: []
+    field :interfaces, list(Interface.t()), default: []
     field :enums, list(Enumeration.t()), default: []
     field :unions, list(Union.t()), default: []
   end
@@ -41,6 +42,12 @@ defmodule Absinthe.SchemaDiff.Introspection do
     field :fields, list(Field.t())
   end
 
+  typedstruct module: Interface, enforce: true do
+    field :name, String.t()
+    field :fields, list(Field.t())
+    field :possible_types, list(Type.t())
+  end
+
   typedstruct module: Enumeration, enforce: true do
     field :name, String.t()
     field :values, list(Field.t())
@@ -56,7 +63,7 @@ defmodule Absinthe.SchemaDiff.Introspection do
     build_schema(raw_schema)
   end
 
-  def generate(url) when is_binary(url) do
+  def generate("http" <> _ = url) do
     {:ok, {_http, _headers, body}} =
       :httpc.request(
         :post,
@@ -78,11 +85,19 @@ defmodule Absinthe.SchemaDiff.Introspection do
         []
       )
 
-    body
-    |> to_string()
-    |> Jason.decode!()
-    |> get_in(["data", "__schema"])
-    |> build_schema()
+    %{"data" => %{"__schema" => raw_schema}} =
+      body
+      |> to_string()
+      |> Jason.decode!()
+
+    build_schema(raw_schema)
+  end
+
+  def generate(json) when is_binary(json) do
+    %{"data" => %{"__schema" => raw_schema}} =
+      Jason.decode!(json)
+
+    build_schema(raw_schema)
   end
 
   def build_schema(%{"types" => types}) when is_list(types) do
@@ -110,6 +125,14 @@ defmodule Absinthe.SchemaDiff.Introspection do
     %InputObject{
       name: Map.get(definition, "name"),
       fields: Map.get(definition, "inputFields") |> Enum.map(&to_field/1)
+    }
+  end
+
+  defp to_schema_type(%{"kind" => "INTERFACE", "possibleTypes" => types} = definition) do
+    %Interface{
+      name: Map.get(definition, "name"),
+      fields: Map.get(definition, "fields") |> Enum.map(&to_field/1),
+      possible_types: Enum.map(types, &to_type/1)
     }
   end
 
@@ -154,6 +177,9 @@ defmodule Absinthe.SchemaDiff.Introspection do
 
   defp insert(%InputObject{} = new, %Schema{input_objects: existing} = schema),
     do: %{schema | input_objects: [new | existing]}
+
+  defp insert(%Interface{} = new, %Schema{interfaces: existing} = schema),
+    do: %{schema | interfaces: [new | existing]}
 
   defp insert(%Enumeration{} = new, %Schema{enums: existing} = schema),
     do: %{schema | enums: [new | existing]}
