@@ -1,21 +1,16 @@
-# AbsintheSchemaDiff
+# Absinthe SchemaDiff
 
-**TODO: Add description**
+Compare the local Absinthe schema with a remote GraphQL schema and report a diff.
 
-## Installation
+## Usage
 
-If [available in Hex](https://hex.pm/docs/publish), the package can be installed
-by adding `absinthe_schema_diff` to your list of dependencies in `mix.exs`:
+    mix absinthe.schema.diff [OPTIONS] URL
 
-```elixir
-def deps do
-  [
-    {:absinthe_schema_diff, "~> 0.1.0"}
-  ]
-end
-```
+## Options
 
-Documentation can be generated with [ExDoc](https://github.com/elixir-lang/ex_doc)
-and published on [HexDocs](https://hexdocs.pm). Once published, the docs can
-be found at <https://hexdocs.pm/absinthe_schema_diff>.
+* `--schema` - The name of the `Absinthe.Schema` module defining the schema to be compared.
+      Default: As [configured](https://hexdocs.pm/mix/Mix.Config.html) for `:absinthe` `:schema`
 
+## Examples
+
+    mix absinthe.schema.diff https://my.server/graphql
