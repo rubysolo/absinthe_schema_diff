@@ -135,12 +135,30 @@ defmodule Absinthe.SchemaDiff.Report do
           name: name,
           type: Field,
           changes: %DiffSet{
-            changes: [field_changes]
+            changes: [_ | _] = changes
           }
         },
         formatter
       ) do
-    report(%{field_changes | name: name}, formatter)
+    indent_once = Formatter.add_indent(formatter)
+    indent_twice = Formatter.add_indent(indent_once)
+
+    Enum.reduce(
+      changes,
+      [
+        [
+          formatter.indent,
+          Formatter.type_label(formatter, "Field"),
+          " ",
+          Formatter.schema_object(formatter, name),
+          @nl
+        ],
+        [indent_once.indent, "Changes:", @nl]
+      ],
+      fn diff, acc ->
+        [acc, report(diff, indent_twice)]
+      end
+    )
   end
 
   def report(
@@ -154,10 +172,13 @@ defmodule Absinthe.SchemaDiff.Report do
         },
         formatter
       ) do
+    {name, separator} = if is_nil(name), do: {"", ""}, else: {name, " "}
+
     [
       formatter.indent,
       Formatter.schema_object(formatter, name),
-      " type changed from ",
+      separator,
+      "type changed from ",
       Formatter.inline_type(formatter, inspect(old_type)),
       " to ",
       Formatter.inline_type(formatter, inspect(new_type)),

@@ -251,7 +251,9 @@ defmodule Absinthe.SchemaDiff.ReportTest do
         Changes:
           Object Car
             Changes:
-              Year type changed from "non_null(String)" to "Int"
+              Field Year
+                Changes:
+                  type changed from "non_null(String)" to "Int"
         """
       )
     end
