@@ -234,35 +234,33 @@ defmodule Absinthe.SchemaDiff.DiffTest do
                ]
              } == Diff.diff(@schema, new_schema)
 
-      existing =
-        %Object{
-          name: "RootObject",
-          fields: [
-            %Field{
-              name: "myField",
-              type: %Type{
-                kind: "OBJECT",
-                name: "Foo",
-                of_type: nil
-              }
+      existing = %Object{
+        name: "RootObject",
+        fields: [
+          %Field{
+            name: "myField",
+            type: %Type{
+              kind: "OBJECT",
+              name: "Foo",
+              of_type: nil
             }
-          ]
-        }
+          }
+        ]
+      }
 
-      new =
-        %Object{
-          name: "RootObject",
-          fields: [
-            %Field{
-              name: "myField",
-              type: %Type{
-                kind: "OBJECT",
-                name: "WrappedFoo",
-                of_type: nil
-              }
+      new = %Object{
+        name: "RootObject",
+        fields: [
+          %Field{
+            name: "myField",
+            type: %Type{
+              kind: "OBJECT",
+              name: "WrappedFoo",
+              of_type: nil
             }
-          ]
-        }
+          }
+        ]
+      }
 
       assert %DiffSet{
                changes: [

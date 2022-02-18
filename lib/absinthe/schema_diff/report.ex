@@ -102,7 +102,7 @@ defmodule Absinthe.SchemaDiff.Report do
   def report(diff, formatter \\ %Formatter{})
 
   def report(%DiffSet{additions: [], removals: [], changes: []}, formatter) do
-    [Formatter.ok(formatter, "no changes."), @nl]
+    [formatter.indent, Formatter.ok(formatter, "no changes."), @nl]
   end
 
   def report(item, formatter) when is_binary(item) do
@@ -135,15 +135,21 @@ defmodule Absinthe.SchemaDiff.Report do
           name: name,
           type: Field,
           changes: %DiffSet{
-            changes: [
-              %Diff{
-                type: Type,
-                changes: %DiffSet{
-                  additions: [new_type],
-                  removals: [old_type]
-                }
-              }
-            ]
+            changes: [field_changes]
+          }
+        },
+        formatter
+      ) do
+    report(%{field_changes | name: name}, formatter)
+  end
+
+  def report(
+        %Diff{
+          name: name,
+          type: Type,
+          changes: %DiffSet{
+            additions: [new_type],
+            removals: [old_type]
           }
         },
         formatter
@@ -152,9 +158,9 @@ defmodule Absinthe.SchemaDiff.Report do
       formatter.indent,
       Formatter.schema_object(formatter, name),
       " type changed from ",
-      Formatter.inline_type(formatter, old_type),
+      Formatter.inline_type(formatter, inspect(old_type)),
       " to ",
-      Formatter.inline_type(formatter, new_type),
+      Formatter.inline_type(formatter, inspect(new_type)),
       @nl
     ]
   end

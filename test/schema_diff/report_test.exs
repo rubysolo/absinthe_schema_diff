@@ -251,7 +251,7 @@ defmodule Absinthe.SchemaDiff.ReportTest do
         Changes:
           Object Car
             Changes:
-              Year type changed from non_null(String) to Int
+              Year type changed from "non_null(String)" to "Int"
         """
       )
     end
@@ -536,7 +536,7 @@ defmodule Absinthe.SchemaDiff.ReportTest do
         Changes:
           Union SearchResult
             Changes:
-              Car changed from "object" to "other"
+              Car type changed from "object" to "other"
         """
       )
     end
