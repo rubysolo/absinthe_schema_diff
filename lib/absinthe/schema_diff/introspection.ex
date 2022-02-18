@@ -109,16 +109,38 @@ defmodule Absinthe.SchemaDiff.Introspection do
   defp default_httpc_ssl_config(config) do
     case Keyword.get(config, :ssl) do
       nil ->
-        Keyword.merge(config, ssl: [
-          verify: :verify_peer,
-          cacertfile: '/etc/ssl/certs/ca-certificates.crt',
-          customize_hostname_check: [
-            match_fun: :public_key.pkix_verify_hostname_match_fun(:https)
-          ]
-        ])
+        Keyword.merge(config, ssl: ssl_config())
 
       _ ->
         config
+    end
+  end
+
+  defp ssl_config do
+    Enum.reduce(
+      [
+        [verify: :verify_peer],
+        ca_certfile(),
+        allow_wildcard_certs()
+      ],
+      &Keyword.merge/2
+    )
+  end
+
+  defp ca_certfile do
+    cacertfile =
+      :absinthe_schema_diff
+      |> Application.get_env(:ca_certfile, "/etc/ssl/certs/ca-certificates.crt")
+      |> String.to_charlist()
+
+    [cacertfile: cacertfile]
+  end
+
+  defp allow_wildcard_certs do
+    if Application.get_env(:absinthe_schema_diff, :allow_wildcard_certs, true) do
+      [customize_hostname_check: [match_fun: :public_key.pkix_verify_hostname_match_fun(:https)]]
+    else
+      []
     end
   end
 
