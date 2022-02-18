@@ -73,9 +73,7 @@ defmodule Absinthe.SchemaDiff.Diff do
           name: existing.name,
           changes:
             reduce_diffs([
-              {{:deprecated, existing.deprecated}, {:deprecated, new.deprecated}},
-              {{:deprecation_reason, existing.deprecation_reason},
-               {:deprecation_reason, new.deprecation_reason}},
+              {existing.deprecation, new.deprecation},
               {existing.type, new.type}
             ])
         }
@@ -146,26 +144,21 @@ defmodule Absinthe.SchemaDiff.Diff do
     |> reduce_diffs()
   end
 
-  defp reduce_diffs(diffs) when is_list(diffs) do
+  def reduce_diffs(diffs) when is_list(diffs) do
     Enum.reduce(diffs, %DiffSet{}, fn
-      {nil, new_item}, %{additions: additions} = acc ->
+      {nil, new_item}, %{additions: additions} = acc when not is_nil(new_item) ->
         %{acc | additions: [new_item | additions]}
 
-      {existing_item, nil}, %{removals: removals} = acc ->
+      {existing_item, nil}, %{removals: removals} = acc when not is_nil(existing_item) ->
         %{acc | removals: [existing_item | removals]}
 
       {existing_item, new_item}, %{} = acc ->
-        case diff(existing_item, new_item) do
-          [] ->
-            acc
-
-          %{} = diff ->
-            %DiffSet{
-              additions: Enum.concat(diff.additions, acc.additions),
-              removals: Enum.concat(diff.removals, acc.removals),
-              changes: Enum.concat(diff.changes, acc.changes)
-            }
-        end
+        nested = diff(existing_item, new_item)
+        %DiffSet{
+          additions: Enum.concat(acc.additions, nested.additions),
+          removals: Enum.concat(acc.removals, nested.removals),
+          changes: Enum.concat(acc.changes, nested.changes)
+        }
     end)
   end
 

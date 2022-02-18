@@ -7,6 +7,7 @@ defmodule Absinthe.SchemaDiff.DiffTest do
   }
 
   alias Absinthe.SchemaDiff.Introspection.{
+    Deprecation,
     Enumeration,
     Field,
     InputObject,
@@ -294,7 +295,7 @@ defmodule Absinthe.SchemaDiff.DiffTest do
 
     test "changes to object field deprecations are reported" do
       %Object{fields: [field | fields]} = existing_object = @object
-      new_field = %{field | deprecated: true, deprecation_reason: "old and busted"}
+      new_field = %{field | deprecation: %Deprecation{reason: "old and busted"}}
       new_object = %{existing_object | fields: [new_field | fields]}
 
       existing_schema = @schema
@@ -311,14 +312,9 @@ defmodule Absinthe.SchemaDiff.DiffTest do
                          type: Field,
                          name: "Year",
                          changes: %DiffSet{
-                           changes: [
-                             %Diff{
-                               name: "deprecation_reason",
-                               changes: %DiffSet{additions: ["old and busted"], removals: [nil]}
-                             },
-                             %Diff{
-                               name: "deprecated",
-                               changes: %DiffSet{additions: [true], removals: [false]}
+                           additions: [
+                             %Deprecation{
+                               reason: "old and busted",
                              }
                            ]
                          }

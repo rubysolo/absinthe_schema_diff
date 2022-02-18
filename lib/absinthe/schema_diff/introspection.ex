@@ -6,7 +6,6 @@ defmodule Absinthe.SchemaDiff.Introspection do
          |> Path.join("introspection_query.graphql")
          |> File.read!()
 
-
   typedstruct module: Schema do
     field :scalars, list(Scalar.t()), default: []
     field :objects, list(Object.t()), default: []
@@ -25,10 +24,13 @@ defmodule Absinthe.SchemaDiff.Introspection do
     field :fields, list(Field.t())
   end
 
+  typedstruct module: Deprecation, enforce: true do
+    field :reason, String.t()
+  end
+
   typedstruct module: Field, enforce: true do
     field :name, String.t()
-    field :deprecated, :boolean, default: false
-    field :deprecation_reason, String.t(), default: nil
+    field :deprecation, Deprecation.t(), default: nil
     field :type, Type.t()
   end
 
@@ -171,9 +173,13 @@ defmodule Absinthe.SchemaDiff.Introspection do
   end
 
   defp to_field(%{"name" => name} = input) do
+    deprecation =
+      if Map.get(input, "isDeprecated") do
+        %Deprecation{reason: Map.get(input, "deprecationReason", "no reason given")}
+      end
+
     %Field{
-      deprecated: Map.get(input, "isDeprecated"),
-      deprecation_reason: Map.get(input, "deprecationReason"),
+      deprecation: deprecation,
       name: name,
       type: to_type(Map.get(input, "type"))
     }

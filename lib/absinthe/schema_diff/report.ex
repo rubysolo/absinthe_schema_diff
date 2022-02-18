@@ -9,6 +9,7 @@ defmodule Absinthe.SchemaDiff.Report do
   }
 
   alias Absinthe.SchemaDiff.Introspection.{
+    Deprecation,
     Enumeration,
     Field,
     InputObject,
@@ -240,6 +241,14 @@ defmodule Absinthe.SchemaDiff.Report do
     ]
   end
 
+  def report(%Deprecation{reason: reason}, formatter) do
+    [
+      formatter.indent,
+      Formatter.deprecation(formatter, "DEPRECATED - #{reason}"),
+      @nl
+    ]
+  end
+
   def report(%Enumeration{name: name, values: values}, formatter) do
     indent_once = Formatter.add_indent(formatter)
     indent_twice = Formatter.add_indent(indent_once)
@@ -264,8 +273,8 @@ defmodule Absinthe.SchemaDiff.Report do
 
   def report(%Field{} = field, formatter) do
     deprecation =
-      if field.deprecated do
-        Formatter.deprecation(formatter, " DEPRECATED - #{field.deprecation_reason}")
+      if field.deprecation do
+        Formatter.deprecation(formatter, " DEPRECATED - #{field.deprecation.reason}")
       else
         ""
       end

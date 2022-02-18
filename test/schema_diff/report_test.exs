@@ -8,6 +8,7 @@ defmodule Absinthe.SchemaDiff.ReportTest do
   }
 
   alias Absinthe.SchemaDiff.Introspection.{
+    Deprecation,
     Enumeration,
     Field,
     InputObject,
@@ -258,7 +259,7 @@ defmodule Absinthe.SchemaDiff.ReportTest do
       )
     end
 
-    test "reporting changes to object field deprecations" do
+    test "reporting deprecations to object fields" do
       diff_set = %DiffSet{
         changes: [
           %Diff{
@@ -270,14 +271,9 @@ defmodule Absinthe.SchemaDiff.ReportTest do
                   type: Field,
                   name: "Year",
                   changes: %DiffSet{
-                    changes: [
-                      %Diff{
-                        name: "deprecation_reason",
-                        changes: %DiffSet{additions: ["old and busted"], removals: [nil]}
-                      },
-                      %Diff{
-                        name: "deprecated",
-                        changes: %DiffSet{additions: [true], removals: [false]}
+                    additions: [
+                      %Deprecation{
+                        reason: "old and busted"
                       }
                     ]
                   }
@@ -295,9 +291,46 @@ defmodule Absinthe.SchemaDiff.ReportTest do
           Object Car
             Changes:
               Field Year
-                Changes:
-                  deprecation_reason changed from nil to "old and busted"
-                  deprecated changed from false to true
+                Additions:
+                  DEPRECATED - old and busted
+        """
+      )
+    end
+
+    test "reporting deprecation removal from object fields" do
+      diff_set = %DiffSet{
+        changes: [
+          %Diff{
+            type: Object,
+            name: "Car",
+            changes: %DiffSet{
+              changes: [
+                %Diff{
+                  type: Field,
+                  name: "Year",
+                  changes: %DiffSet{
+                    removals: [
+                      %Deprecation{
+                        reason: "old and busted"
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      }
+
+      assert_report_output(
+        diff_set,
+        """
+        Changes:
+          Object Car
+            Changes:
+              Field Year
+                Removals:
+                  DEPRECATED - old and busted
         """
       )
     end
