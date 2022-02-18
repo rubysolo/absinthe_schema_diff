@@ -162,25 +162,6 @@ defmodule Absinthe.SchemaDiff.Report do
   def report(
         %Diff{
           name: name,
-          type: _type,
-          changes: %DiffSet{additions: [new_value], removals: [old_value]}
-        },
-        formatter
-      ) do
-    [
-      formatter.indent,
-      Formatter.schema_object(formatter, name),
-      " changed from ",
-      Formatter.inline_type(formatter, inspect(old_value)),
-      " to ",
-      Formatter.inline_type(formatter, inspect(new_value)),
-      @nl
-    ]
-  end
-
-  def report(
-        %Diff{
-          name: name,
           type: Union,
           changes: %DiffSet{
             changes: [_ | _] = changed_types
@@ -326,8 +307,12 @@ defmodule Absinthe.SchemaDiff.Report do
   def report(label, items, formatter) when is_list(items) do
     new_formatter = Formatter.add_indent(formatter)
 
-    Enum.reduce(
-      items,
+    items
+    |> Enum.sort_by(fn
+      %{name: name} -> name
+      identity -> identity
+    end)
+    |> Enum.reduce(
       [formatter.indent, Formatter.label(formatter, label), @nl],
       fn item, acc -> [acc, report(item, new_formatter)] end
     )
