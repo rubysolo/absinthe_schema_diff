@@ -3,13 +3,13 @@ defmodule Absinthe.SchemaDiff do
   alias Absinthe.SchemaDiff.Introspection
 
   @doc """
-  compare local Absinthe schema with the GraphQL schema at the provided URL and return a DiffSet
+  Compare local Absinthe schema with the GraphQL schema from the provided source and return a DiffSet
   """
   @spec diff(atom(), String.t()) :: Diff.DiffSet.t()
-  def diff(schema, url) do
+  def diff(schema, source) do
     local_schema = Introspection.generate(schema)
-    remote_schema = Introspection.generate(url)
+    base_schema = Introspection.generate(source)
 
-    Diff.diff(remote_schema, local_schema)
+    Diff.diff(base_schema, local_schema)
   end
 end

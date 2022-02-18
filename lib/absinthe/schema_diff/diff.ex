@@ -92,12 +92,22 @@ defmodule Absinthe.SchemaDiff.Diff do
   end
 
   def diff(%Type{} = existing, %Type{} = new) do
+    existing_type = render_type(existing)
+    new_type = render_type(new)
+
+    changes =
+      if existing_type == new_type do
+        diff(existing.name, new.name)
+      else
+        diff(existing_type, new_type)
+      end
+
     %DiffSet{
       changes: [
         %Diff{
           type: Type,
           name: existing.name,
-          changes: diff(render_type(existing), render_type(new))
+          changes: changes
         }
       ]
     }

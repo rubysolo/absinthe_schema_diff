@@ -9,11 +9,12 @@ defmodule Mix.Tasks.Absinthe.Schema.Diff do
   @shortdoc "Compare a local Absinthe schema with a remote GrahpQL schema"
 
   @moduledoc """
-  Compare the local Absinthe schema with a remote GraphQL schema and report a diff.
+  Compare the local Absinthe schema with a base GraphQL schema (accessed either by a URL or a JSON file)
+  and report a diff.
 
   ## Usage
 
-      mix absinthe.schema.diff [OPTIONS] URL
+      mix absinthe.schema.diff [OPTIONS] BASE_SCHEMA
 
   ## Options
 
@@ -22,7 +23,13 @@ defmodule Mix.Tasks.Absinthe.Schema.Diff do
 
   ## Examples
 
+  Compare the configured :absinthe schema against a remote GraphQL server
+
       mix absinthe.schema.diff https://my.server/graphql
+
+  Compare a specific schema module against a schema in a JSON file
+
+      mix absinthe.schema.diff --schema GraphQL.Schema base_schema.json
   """
 
   defmodule Options do
@@ -32,7 +39,7 @@ defmodule Mix.Tasks.Absinthe.Schema.Diff do
     typedstruct enforce: true do
       field :handlers, list(String.t())
       field :schema, String.t()
-      field :url, String.t()
+      field :base, String.t()
     end
   end
 
@@ -50,8 +57,8 @@ defmodule Mix.Tasks.Absinthe.Schema.Diff do
     |> handle_diff(opts)
   end
 
-  def run_diff(%Options{schema: schema, url: url}) do
-    SchemaDiff.diff(schema, url)
+  def run_diff(%Options{schema: schema, base: base}) do
+    SchemaDiff.diff(schema, base)
   end
 
   def handle_diff(diff_set, %Options{handlers: handlers}) do
@@ -68,7 +75,7 @@ defmodule Mix.Tasks.Absinthe.Schema.Diff do
     %Options{
       handlers: find_handlers(opts),
       schema: find_schema(opts),
-      url: validate_url(args)
+      base: validate_base(args)
     }
   end
 
@@ -143,6 +150,6 @@ defmodule Mix.Tasks.Absinthe.Schema.Diff do
     end
   end
 
-  defp validate_url(["http" <> _ = url | _]), do: url
-  defp validate_url(_), do: raise("No URL given for remote GraphQL API")
+  defp validate_base([arg | _]), do: arg
+  defp validate_base(_), do: raise("No URL or filename given for base GraphQL API")
 end

@@ -233,6 +233,65 @@ defmodule Absinthe.SchemaDiff.DiffTest do
                  }
                ]
              } == Diff.diff(@schema, new_schema)
+
+      existing =
+        %Object{
+          name: "RootObject",
+          fields: [
+            %Field{
+              name: "myField",
+              type: %Type{
+                kind: "OBJECT",
+                name: "Foo",
+                of_type: nil
+              }
+            }
+          ]
+        }
+
+      new =
+        %Object{
+          name: "RootObject",
+          fields: [
+            %Field{
+              name: "myField",
+              type: %Type{
+                kind: "OBJECT",
+                name: "WrappedFoo",
+                of_type: nil
+              }
+            }
+          ]
+        }
+
+      assert %DiffSet{
+               changes: [
+                 %Diff{
+                   type: Object,
+                   name: "RootObject",
+                   changes: %DiffSet{
+                     changes: [
+                       %Diff{
+                         type: Field,
+                         name: "myField",
+                         changes: %DiffSet{
+                           changes: [
+                             %Diff{
+                               type: Type,
+                               name: "Foo",
+                               changes: %DiffSet{
+                                 additions: ["WrappedFoo"],
+                                 removals: ["Foo"]
+                               }
+                             }
+                           ]
+                         }
+                       }
+                     ]
+                   }
+                 }
+               ]
+             } == Diff.diff(existing, new)
     end
 
     test "changes to object field deprecations are reported" do

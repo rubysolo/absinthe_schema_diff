@@ -86,8 +86,20 @@ defmodule Absinthe.SchemaDiff.Introspection do
     build_schema(raw_schema)
   end
 
-  def generate(json) when is_binary(json) do
-    %{"data" => %{"__schema" => raw_schema}} = Jason.decode!(json)
+  def generate(string) when is_binary(string) do
+    json =
+      case File.read(string) do
+        {:ok, json} -> json
+        {:error, :enoent} -> string
+      end
+
+    data =
+      case Jason.decode(json) do
+        {:ok, data} -> data
+        _ -> raise "Could not decode JSON"
+      end
+
+    %{"data" => %{"__schema" => raw_schema}} = data
 
     build_schema(raw_schema)
   end
