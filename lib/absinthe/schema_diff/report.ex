@@ -14,6 +14,7 @@ defmodule Absinthe.SchemaDiff.Report do
     Field,
     InputObject,
     Object,
+    Scalar,
     Type,
     Union
   }
@@ -310,6 +311,16 @@ defmodule Absinthe.SchemaDiff.Report do
         [acc, report(field, Formatter.add_indent(new_formatter))]
       end
     )
+  end
+
+  def report(%Scalar{name: name}, formatter) do
+    [
+      formatter.indent,
+      Formatter.schema_object(formatter, name),
+      " ",
+      Formatter.type_label(formatter, "Scalar"),
+      @nl
+    ]
   end
 
   def report(%Type{} = type, formatter) do

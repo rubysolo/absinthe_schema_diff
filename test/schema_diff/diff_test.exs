@@ -12,6 +12,7 @@ defmodule Absinthe.SchemaDiff.DiffTest do
     Field,
     InputObject,
     Object,
+    Scalar,
     Schema,
     Type,
     Union
@@ -55,10 +56,15 @@ defmodule Absinthe.SchemaDiff.DiffTest do
     ]
   }
 
+  @scalar %Scalar{
+    name: "Money"
+  }
+
   @schema %Schema{
     enums: [@enum],
     input_objects: [@input_object],
     objects: [@object],
+    scalars: [@scalar],
     unions: [@union]
   }
 
@@ -389,6 +395,18 @@ defmodule Absinthe.SchemaDiff.DiffTest do
       assert %DiffSet{
                changes: [
                  %Diff{type: InputObject, name: "FormInput", changes: %DiffSet{removals: [field]}}
+               ]
+             } == Diff.diff(@schema, new_schema)
+    end
+
+    test "added scalars are reported" do
+      new_scalar = %Scalar{name: "Email"}
+      existing_schema = @schema
+      new_schema = %{existing_schema | scalars: [new_scalar | existing_schema.scalars]}
+
+      assert %DiffSet{
+               additions: [
+                 %Scalar{name: "Email"}
                ]
              } == Diff.diff(@schema, new_schema)
     end

@@ -13,6 +13,7 @@ defmodule Absinthe.SchemaDiff.ReportTest do
     Field,
     InputObject,
     Object,
+    Scalar,
     Type,
     Union
   }
@@ -437,6 +438,22 @@ defmodule Absinthe.SchemaDiff.ReportTest do
           InputObject FormInput
             Removals:
               Color String
+        """
+      )
+    end
+
+    test "reporting added scalars" do
+      diff_set = %DiffSet{
+        additions: [
+          %Scalar{name: "Email"}
+        ]
+      }
+
+      assert_report_output(
+        diff_set,
+        """
+        Additions:
+          Email Scalar
         """
       )
     end
