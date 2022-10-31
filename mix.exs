@@ -26,7 +26,7 @@ defmodule AbsintheSchemaDiff.MixProject do
     [
       {:absinthe, "~> 1.7.0"},
       {:ex_doc, "~> 0.27", only: :dev, runtime: false},
-      {:jason, "~> 1.3.0"},
+      {:jason, "~> 1.3"},
       {:typed_struct, "~> 0.2"}
     ]
   end
